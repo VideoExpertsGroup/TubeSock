@@ -8,3 +8,4 @@ bin/
 local.properties
 target/
 release.properties
+build/*

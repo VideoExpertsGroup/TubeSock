@@ -42,6 +42,8 @@ public class WebSocket {
     static final byte OPCODE_PING = 0x9;
     static final byte OPCODE_PONG = 0xA;
 
+    private final int SOCKET_TIMEOUT_EXCEPTION = 1_000 * 60 * 2;
+
     private volatile State state = State.NONE;
     private volatile Socket socket = null;
 
@@ -176,6 +178,7 @@ public class WebSocket {
     }
 
     void handleReceiverError(WebSocketException e) {
+        eventHandler.onLogMessage(e.getMessage());
         eventHandler.onError(e);
         if (state == State.CONNECTED) {
             close();
@@ -255,9 +258,11 @@ public class WebSocket {
             }
             try {
                 socket = new Socket(host, port);
+                socket.setSoTimeout(SOCKET_TIMEOUT_EXCEPTION);
             } catch (UnknownHostException uhe) {
                 throw new WebSocketException("unknown host: " + host, uhe);
             } catch (IOException ioe) {
+                eventHandler.onLogMessage(ioe.getMessage());
                 throw new WebSocketException("error while creating socket to " + url, ioe);
             }
         } else if (scheme != null && scheme.equals("wss")) {
@@ -379,6 +384,10 @@ public class WebSocket {
             close();
         }
 
+    }
+
+    protected boolean isConnected() {
+        return state == WebSocket.State.CONNECTED;
     }
 
     Thread getInnerThread() {
